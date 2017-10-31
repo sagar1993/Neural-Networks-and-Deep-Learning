@@ -1,0 +1,47 @@
+from mnist import MNIST
+import numpy as np
+
+mndata = MNIST('samples')
+
+images_train, labels_train = mndata.load_training()
+# or
+images_test, labels_test = mndata.load_testing()
+
+images_train_np = np.array(images_train)
+labels_train_np = np.array(labels_train)
+
+images_test_np = np.array(images_test)
+labels_test_np = np.array(labels_test)
+
+
+class K_nearest:
+    __k = 1
+    __train_x = np.array([])
+    __train_y = np.array([])
+    __result = np.array([])
+    def __init__(self, k):
+        self.__k = k
+    def fit(self, train_x, train_y):
+        self.__train_x = train_x
+        self.__train_y = train_y
+    def predict(self, test_x):
+        result = []
+        for i in range(test_x.shape[0]):
+            array = np.array(np.sqrt(np.sum(np.power((self.__train_x - test_x[i]), 2), axis=1)))
+            combined = np.column_stack((array,self.__train_y))
+            sort = combined[combined[:,0].argsort()]
+            counts = np.bincount(sort[:self.__k][:,1].astype(int))
+            res = np.argmax(counts)
+            result.append(res)
+        self.__result = np.array(result)
+    def score(self, test_y):
+        return (np.sum(np.equal(self.__result, test_y)) * 1.)/ self.__result.shape[0]
+    
+for k in [1,3,5,10,30,50,70,80,90,100] :
+    knn = K_nearest(k)
+    knn.fit(images_train_np, labels_train_np)
+    import datetime
+    print datetime.datetime.now()
+    knn.predict(images_test_np[:1000])
+    print datetime.datetime.now()
+    print knn.score(labels_test_np[:1000])
