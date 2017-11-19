@@ -1,0 +1,99 @@
+class K_nearest:
+    __k = 1
+    __train_x = np.array([])
+    __train_y = np.array([])
+    __result = np.array([])
+    def __init__(self, k):
+        self.__k = k
+    def fit(self, train_x, train_y):
+        self.__train_x = train_x
+        self.__train_y = train_y
+    def predict(self, test_x):
+        result = []
+        for i in range(test_x.shape[0]):
+            array = np.array(np.sqrt(np.sum(np.power((self.__train_x - test_x[i]), 2), axis=1)))
+            combined = np.column_stack((array,self.__train_y))
+            sort = combined[combined[:,0].argsort()]
+            counts = np.bincount(sort[:self.__k][:,1].astype(int))
+            res = np.argmax(counts)
+            result.append(res)
+        self.__result = np.array(result)
+    def score(self, test_y):
+        return (np.sum(np.equal(self.__result, test_y)) * 1.)/ self.__result.shape[0]
+		
+		
+
+"""
+partition data into k folds
+use by one fold as validation set 
+calculate accuracy at each fold and average
+
+"""
+
+class K_fold:
+    
+    k = 0
+    
+    def __init__(self, k, model):
+        self.k = k
+        self.model = model
+        
+    def fit(self, train_x, train_y):
+        count = train_x.shape[0]
+        fold = int(count/ self.k)
+        
+        start = 0
+        scores = []
+        for i in range(1, self.k+1):
+            end = i * fold
+            val_x = train_x[start:end]
+            val_y = train_y[start:end]
+            
+            start = end
+
+            start_fold = 0
+            train_fold_x = np.empty(val_x.shape, int)
+            train_fold_y = np.empty(val_y.shape, int)
+            for j in range(1, self.k+1):
+                end_fold = j * fold
+                if i != j:
+                    train_fold_x = np.concatenate((train_fold_x, train_x[start_fold:end_fold]))
+                    train_fold_y = np.concatenate((train_fold_y, train_y[start_fold:end_fold]))
+                start_fold = end_fold
+            
+            self.model.fit(train_fold_x, train_fold_y)
+
+            self.model.predict(val_x)
+            
+            score = self.model.score(val_y)
+            scores.append(score)
+			
+        return sum(scores)/ self.k
+		
+		
+
+		
+		
+avg_scores_by_fold = []
+for i in range(9):
+    k = 2 * i + 1
+    knn = K_nearest(k)
+    k_fold = K_fold(5, knn)
+    avg_scores_by_fold.append(k_fold.fit(knn_data['train_data'], knn_data['train_label']))
+print(avg_scores_by_fold)
+
+"""
+[0.57519999999999993, 0.62680000000000002, 0.67120000000000002, 0.68419999999999992, 0.70280000000000009, 0.70140000000000002, 0.70620000000000005, 0.70479999999999998, 0.71020000000000005]
+"""
+
+
+nbrs = K_nearest(17)
+nbrs.fit(knn_data['train_data'], knn_data['train_label'])
+nbrs.predict(knn_data['test_data'])
+print(nbrs.score(knn_data['test_data'], knn_data['test_label']))
+
+"""
+0.949937421777
+"""
+
+		

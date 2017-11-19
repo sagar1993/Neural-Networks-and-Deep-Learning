@@ -1,0 +1,25 @@
+class PCA:
+    n = 0
+    martix = []
+    def __init__(self, n):
+        self.n = n
+    def fit(self, train_x):
+        train_x_mean = np.mean(train_x, axis=0)
+        train_x = train_x - train_x_mean
+        
+        cov_matrix = np.cov(train_x.T)
+        eigen_values, eigen_vectors = np.linalg.eig(cov_matrix)
+        index = np.argsort(eigen_values)[::-1]
+        eigen_vectors = eigen_vectors[:, index]
+        eigen_values = eigen_values[index]
+        
+        eigen_vectors = eigen_vectors[:,:self.n]
+
+        self.matrix = eigen_vectors
+
+    def fitTransform(self, train_x):
+        self.fit(train_x)
+        return np.dot(self.matrix.T, train_x.T).T
+        
+    def transform(self, test_x):
+        return np.dot(self.matrix.T, test_x.T).T
